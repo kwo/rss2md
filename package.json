@@ -1,0 +1,38 @@
+{
+  "name": "rss2md",
+  "version": "0.1.0",
+  "description": "Parse an RSS feed and write items as markdown files.",
+  "bin": {
+    "rss2md": "./dist/rss2md"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "dev": "tsx src/rss2md.ts",
+    "compile": "node ./scripts/build.mjs",
+    "link": "chmod +x dist/rss2md",
+    "build": "run-s clean compile link",
+    "lint": "run-s fmt lint:biome lint:tsc",
+    "lint:fix": "run-s fmt:fix lint:biome:fix",
+    "lint:biome": "biome check ./src ./scripts",
+    "lint:biome:fix": "biome check --write ./src ./scripts",
+    "lint:tsc": "tsc -p tsconfig.json",
+    "fmt": "biome format ./src ./scripts",
+    "fmt:fix": "biome format --write ./src ./scripts"
+  },
+  "dependencies": {
+    "feedsmith": "2.9.4"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@types/node": "25.9.1",
+    "esbuild": "0.28.0",
+    "npm-run-all": "4.1.3",
+    "rimraf": "6.1.3",
+    "tsx": "4.22.3",
+    "typescript": "6.0.3"
+  }
+}
