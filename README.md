@@ -68,17 +68,24 @@ Markdown files include YAML front matter:
 
 ```md
 ---
-title: "Example title"
-date: 2026-05-29T15:15:29Z
-source: "https://example.com/post"
-guid: "https://example.com/post"
-feed: "Feed title"
+id: 116658518702934128
+title: "2026-05-29 @15:15:29"
+pubDatetime: 2026-05-29T15:15:29Z
+draft: false
+canonicalURL: "https://example.com/post"
 tags:
   - example
 ---
 
 Item body converted from RSS HTML to Markdown.
 ```
+
+The front matter is compatible with the `posts` content collection in the Astro blog at `~/dev/ostendorfcom`:
+
+- `id` is the last path segment from the RSS item canonical URL.
+- `pubDatetime` comes from the RSS item publish date.
+- `canonicalURL` comes from the RSS item link/GUID URL.
+- `tags` are populated from RSS item categories.
 
 ## State tracking
 

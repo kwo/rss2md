@@ -29,6 +29,7 @@ interface MarkdownItem {
   title: string;
   sourceUrl: string;
   publishedAt: string;
+  frontmatterId: string;
   categories: string[];
   filename: string;
   markdown: string;
@@ -161,7 +162,7 @@ async function main(): Promise<void> {
 
   try {
     for (const item of items) {
-      const markdownItem = toMarkdownItem(feedTitle, item);
+      const markdownItem = toMarkdownItem(item);
       const markdownPath = join(options.outputDir, markdownItem.filename);
       const state = store.itemState(options.feedUrl, markdownItem.id);
 
@@ -206,25 +207,25 @@ async function fetchFeed(feedUrl: string): Promise<string> {
   return response.text();
 }
 
-function toMarkdownItem(feedTitle: string, item: RssItem): MarkdownItem {
+function toMarkdownItem(item: RssItem): MarkdownItem {
   const sourceUrl = item.link ?? item.guid?.value ?? '';
   const bodyHtml = item.content?.encoded ?? item.description ?? '';
   const body = htmlToMarkdown(bodyHtml).trim();
-  const title = item.title?.trim() || titleFromBody(body) || sourceUrl || 'Untitled item';
   const publishedAt = isoDate(item.pubDate);
+  const title = titleFromPublishedAt(publishedAt);
   const id = item.guid?.value ?? (sourceUrl || hash(`${title}\n${publishedAt}\n${body}`));
   const categories =
     item.categories
       ?.map(category => category.name ?? '')
       .filter((category): category is string => category !== '') ?? [];
+  const frontmatterId = frontmatterIdFromUrl(sourceUrl || id);
   const filename = markdownFilename(publishedAt);
   const markdown = renderMarkdown({
     body,
+    canonicalUrl: sourceUrl,
     categories,
-    feedTitle,
-    id,
+    frontmatterId,
     publishedAt,
-    sourceUrl,
     title,
   });
 
@@ -233,6 +234,7 @@ function toMarkdownItem(feedTitle: string, item: RssItem): MarkdownItem {
     title,
     sourceUrl,
     publishedAt,
+    frontmatterId,
     categories,
     filename,
     markdown,
@@ -242,21 +244,23 @@ function toMarkdownItem(feedTitle: string, item: RssItem): MarkdownItem {
 
 function renderMarkdown(input: {
   body: string;
+  canonicalUrl: string;
   categories: string[];
-  feedTitle: string;
-  id: string;
+  frontmatterId: string;
   publishedAt: string;
-  sourceUrl: string;
   title: string;
 }): string {
   const lines = [
     '---',
+    `id: ${input.frontmatterId}`,
     `title: ${yamlString(input.title)}`,
-    `date: ${input.publishedAt}`,
-    `source: ${yamlString(input.sourceUrl)}`,
-    `guid: ${yamlString(input.id)}`,
-    `feed: ${yamlString(input.feedTitle)}`,
+    `pubDatetime: ${input.publishedAt}`,
+    'draft: false',
   ];
+
+  if (input.canonicalUrl !== '') {
+    lines.push(`canonicalURL: ${yamlString(input.canonicalUrl)}`);
+  }
 
   if (input.categories.length > 0) {
     lines.push('tags:');
@@ -321,17 +325,34 @@ function escapeMarkdownLinkText(value: string): string {
   return value.replace(/[\\[\]]/g, match => `\\${match}`);
 }
 
-function titleFromBody(body: string): string {
-  const firstLine = body
-    .split('\n')
-    .map(line => line.trim())
-    .find(Boolean);
-
-  if (firstLine === undefined) {
-    return '';
+function titleFromPublishedAt(publishedAt: string): string {
+  const date = new Date(publishedAt);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('feed item is missing a valid publish date for title generation');
   }
 
-  return firstLine.length > 80 ? `${firstLine.slice(0, 77)}...` : firstLine;
+  const year = date.getUTCFullYear().toString();
+  const month = padded(date.getUTCMonth() + 1);
+  const day = padded(date.getUTCDate());
+  const hour = padded(date.getUTCHours());
+  const minute = padded(date.getUTCMinutes());
+  const second = padded(date.getUTCSeconds());
+
+  return `${year}-${month}-${day} @${hour}:${minute}:${second}`;
+}
+
+function frontmatterIdFromUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const segment = url.pathname.split('/').filter(Boolean).at(-1);
+    if (segment !== undefined && segment !== '') {
+      return segment;
+    }
+  } catch {
+    // Fall back to the non-URL value below.
+  }
+
+  return value;
 }
 
 function markdownFilename(publishedAt: string): string {
