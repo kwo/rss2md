@@ -1,6 +1,6 @@
 {
   "name": "@kwo1/rss2md",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parse an RSS feed and write items as markdown files.",
   "repository": {
     "type": "git",
