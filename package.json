@@ -1,7 +1,12 @@
 {
-  "name": "rss2md",
+  "name": "@kwo1/rss2md",
   "version": "0.1.0",
   "description": "Parse an RSS feed and write items as markdown files.",
+  "private": true,
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
     "rss2md": "./dist/rss2md"
   },
@@ -15,6 +20,7 @@
     "compile": "node ./scripts/build.mjs",
     "link": "chmod +x dist/rss2md",
     "build": "run-s clean compile link",
+    "prepare": "npm run build",
     "lint": "run-s fmt lint:biome lint:tsc",
     "lint:fix": "run-s fmt:fix lint:biome:fix",
     "lint:biome": "biome check ./src ./scripts",
