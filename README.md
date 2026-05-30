@@ -69,7 +69,7 @@ Markdown files include YAML front matter:
 ```md
 ---
 id: 116658518702934128
-title: "2026-05-29 @15:15:29"
+title: "2026-05-29 @ 15:15"
 pubDatetime: 2026-05-29T15:15:29Z
 draft: false
 canonicalURL: "https://example.com/post"

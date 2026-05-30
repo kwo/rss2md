@@ -336,9 +336,7 @@ function titleFromPublishedAt(publishedAt: string): string {
   const day = padded(date.getUTCDate());
   const hour = padded(date.getUTCHours());
   const minute = padded(date.getUTCMinutes());
-  const second = padded(date.getUTCSeconds());
-
-  return `${year}-${month}-${day} @${hour}:${minute}:${second}`;
+  return `${year}-${month}-${day} @ ${hour}:${minute}`;
 }
 
 function frontmatterIdFromUrl(value: string): string {
