@@ -41,7 +41,7 @@ Example:
 Run through TypeScript during development:
 
 ```sh
-npm run dev -- https://example.com/@user --output ./out
+npm run dev -- https://example.com/@user --output ./out --timezone Europe/Berlin
 ```
 
 ## CLI flags
@@ -52,6 +52,7 @@ npm run dev -- https://example.com/@user --output ./out
 | `-o, --output <dir>` | `out` | Directory where Markdown files are written. |
 | `--db <path>` | `<output>/rss2md.db` | SQLite database used to remember processed feed items. |
 | `--limit <n>` | No limit | Process only the first `n` feed items. Must be a positive integer. |
+| `--timezone <tz>` | `UTC` | IANA timezone used to format generated titles, for example `Europe/Berlin`. |
 | `--force` | `false` | Rewrite items even if they already exist in the SQLite state database. |
 | `--version` | n/a | Print the CLI version from `package.json`. |
 | `-h, --help` | n/a | Print CLI help. |
@@ -84,6 +85,7 @@ The front matter is compatible with the `posts` content collection in the Astro 
 
 - `id` is the last path segment from the RSS item canonical URL.
 - `pubDatetime` comes from the RSS item publish date.
+- `title` is generated from `pubDatetime` using `--timezone`, defaulting to UTC.
 - `canonicalURL` comes from the RSS item link/GUID URL.
 - `tags` are populated from RSS item categories.
 

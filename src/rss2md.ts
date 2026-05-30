@@ -13,6 +13,7 @@ declare const __VERSION__: string;
 const version = __VERSION__;
 const defaultUserAgent = `rss2md/${version}`;
 const defaultOutputDir = 'out';
+const defaultTimezone = 'UTC';
 
 type RssItem = DeepPartial<Rss.Item<string>>;
 
@@ -21,6 +22,7 @@ interface Options {
   outputDir: string;
   databasePath: string;
   limit: number | undefined;
+  timezone: string;
   force: boolean;
 }
 
@@ -162,7 +164,7 @@ async function main(): Promise<void> {
 
   try {
     for (const item of items) {
-      const markdownItem = toMarkdownItem(item);
+      const markdownItem = toMarkdownItem(item, options.timezone);
       const markdownPath = join(options.outputDir, markdownItem.filename);
       const state = store.itemState(options.feedUrl, markdownItem.id);
 
@@ -207,12 +209,12 @@ async function fetchFeed(feedUrl: string): Promise<string> {
   return response.text();
 }
 
-function toMarkdownItem(item: RssItem): MarkdownItem {
+function toMarkdownItem(item: RssItem, timezone: string): MarkdownItem {
   const sourceUrl = item.link ?? item.guid?.value ?? '';
   const bodyHtml = item.content?.encoded ?? item.description ?? '';
   const body = htmlToMarkdown(bodyHtml).trim();
   const publishedAt = isoDate(item.pubDate);
-  const title = titleFromPublishedAt(publishedAt);
+  const title = titleFromPublishedAt(publishedAt, timezone);
   const id = item.guid?.value ?? (sourceUrl || hash(`${title}\n${publishedAt}\n${body}`));
   const categories =
     item.categories
@@ -325,18 +327,31 @@ function escapeMarkdownLinkText(value: string): string {
   return value.replace(/[\\[\]]/g, match => `\\${match}`);
 }
 
-function titleFromPublishedAt(publishedAt: string): string {
+function titleFromPublishedAt(publishedAt: string, timezone: string): string {
   const date = new Date(publishedAt);
   if (Number.isNaN(date.getTime())) {
     throw new Error('feed item is missing a valid publish date for title generation');
   }
 
-  const year = date.getUTCFullYear().toString();
-  const month = padded(date.getUTCMonth() + 1);
-  const day = padded(date.getUTCDate());
-  const hour = padded(date.getUTCHours());
-  const minute = padded(date.getUTCMinutes());
-  return `${year}-${month}-${day} @ ${hour}:${minute}`;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  return `${datePart(parts, 'year')}-${datePart(parts, 'month')}-${datePart(parts, 'day')} @ ${datePart(parts, 'hour')}:${datePart(parts, 'minute')}`;
+}
+
+function datePart(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string {
+  const part = parts.find(part => part.type === type);
+  if (part === undefined) {
+    throw new Error(`failed to format date part: ${type}`);
+  }
+  return part.value;
 }
 
 function frontmatterIdFromUrl(value: string): string {
@@ -394,6 +409,7 @@ function parseArgs(args: string[]): Options {
   let outputDir = defaultOutputDir;
   let databasePath: string | undefined;
   let limit: number | undefined;
+  let timezone = defaultTimezone;
   let force = false;
   const positional: string[] = [];
 
@@ -420,6 +436,11 @@ function parseArgs(args: string[]): Options {
       index += 1;
     } else if (arg.startsWith('--limit=')) {
       limit = positiveInteger(arg.slice('--limit='.length), '--limit');
+    } else if (arg === '--timezone') {
+      timezone = validTimezone(requiredValue(args, index, arg));
+      index += 1;
+    } else if (arg.startsWith('--timezone=')) {
+      timezone = validTimezone(arg.slice('--timezone='.length));
     } else if (arg.startsWith('-')) {
       throw new Error(`unknown option: ${arg}`);
     } else {
@@ -444,6 +465,7 @@ function parseArgs(args: string[]): Options {
     outputDir,
     databasePath,
     limit,
+    timezone,
     force,
   };
 }
@@ -452,6 +474,15 @@ function requiredValue(args: string[], index: number, option: string): string {
   const value = args[index + 1];
   if (value === undefined || value.startsWith('-')) {
     throw new Error(`${option} requires a value`);
+  }
+  return value;
+}
+
+function validTimezone(value: string): string {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(new Date());
+  } catch {
+    throw new Error(`invalid timezone: ${value}`);
   }
   return value;
 }
@@ -483,6 +514,7 @@ Options:
   -o, --output <dir>  Directory for markdown files (default: ${defaultOutputDir})
       --db <path>     SQLite state database (default: <output>/rss2md.db)
       --limit <n>     Only process the first n feed items
+      --timezone <tz> Format generated titles in this IANA timezone (default: ${defaultTimezone})
       --force         Rewrite items already recorded in the database
       --version       Print version
   -h, --help          Print help`;
