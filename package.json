@@ -2,7 +2,11 @@
   "name": "@kwo1/rss2md",
   "version": "0.1.0",
   "description": "Parse an RSS feed and write items as markdown files.",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kwo/rss2md.git"
+  },
+  "private": false,
   "files": [
     "dist",
     "README.md"
