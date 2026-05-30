@@ -69,7 +69,7 @@ Markdown files include YAML front matter:
 ```md
 ---
 title: "Example title"
-date: "2026-05-29T15:15:29.000Z"
+date: 2026-05-29T15:15:29Z
 source: "https://example.com/post"
 guid: "https://example.com/post"
 feed: "Feed title"

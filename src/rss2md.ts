@@ -252,7 +252,7 @@ function renderMarkdown(input: {
   const lines = [
     '---',
     `title: ${yamlString(input.title)}`,
-    `date: ${yamlString(input.publishedAt)}`,
+    `date: ${input.publishedAt}`,
     `source: ${yamlString(input.sourceUrl)}`,
     `guid: ${yamlString(input.id)}`,
     `feed: ${yamlString(input.feedTitle)}`,
@@ -368,7 +368,7 @@ function isoDate(value: string | undefined): string {
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  return Number.isNaN(date.getTime()) ? value : date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 function yamlString(value: string): string {
