@@ -161,7 +161,7 @@ async function main(): Promise<void> {
 
   try {
     for (const item of items) {
-      const markdownItem = toMarkdownItem(options.feedUrl, feedTitle, item);
+      const markdownItem = toMarkdownItem(feedTitle, item);
       const markdownPath = join(options.outputDir, markdownItem.filename);
       const state = store.itemState(options.feedUrl, markdownItem.id);
 
@@ -206,7 +206,7 @@ async function fetchFeed(feedUrl: string): Promise<string> {
   return response.text();
 }
 
-function toMarkdownItem(feedUrl: string, feedTitle: string, item: RssItem): MarkdownItem {
+function toMarkdownItem(feedTitle: string, item: RssItem): MarkdownItem {
   const sourceUrl = item.link ?? item.guid?.value ?? '';
   const bodyHtml = item.content?.encoded ?? item.description ?? '';
   const body = htmlToMarkdown(bodyHtml).trim();
@@ -217,7 +217,7 @@ function toMarkdownItem(feedUrl: string, feedTitle: string, item: RssItem): Mark
     item.categories
       ?.map(category => category.name ?? '')
       .filter((category): category is string => category !== '') ?? [];
-  const filename = markdownFilename(publishedAt, feedUrl, id, title);
+  const filename = markdownFilename(publishedAt);
   const markdown = renderMarkdown({
     body,
     categories,
@@ -334,32 +334,24 @@ function titleFromBody(body: string): string {
   return firstLine.length > 80 ? `${firstLine.slice(0, 77)}...` : firstLine;
 }
 
-function markdownFilename(publishedAt: string, feedUrl: string, id: string, title: string): string {
-  const datePrefix = publishedAt === '' ? 'undated' : publishedAt.slice(0, 10);
-  const feedPart = hash(feedUrl).slice(0, 8);
-  const idPart = slugify(lastUrlPathSegment(id) || id).slice(0, 48);
-  const titlePart = slugify(title).slice(0, 48);
-  const slug = idPart || titlePart || hash(id).slice(0, 12);
-  return `${datePrefix}-${feedPart}-${slug}.md`;
-}
-
-function lastUrlPathSegment(value: string): string {
-  try {
-    const url = new URL(value);
-    const segment = url.pathname.split('/').filter(Boolean).at(-1);
-    return segment ?? '';
-  } catch {
-    return '';
+function markdownFilename(publishedAt: string): string {
+  const date = new Date(publishedAt);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('feed item is missing a valid publish date for filename generation');
   }
+
+  const year = date.getUTCFullYear().toString();
+  const month = padded(date.getUTCMonth() + 1);
+  const day = padded(date.getUTCDate());
+  const hour = padded(date.getUTCHours());
+  const minute = padded(date.getUTCMinutes());
+  const second = padded(date.getUTCSeconds());
+
+  return `${year}${month}${day}-${hour}${minute}${second}.md`;
 }
 
-function slugify(value: string): string {
-  return value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+function padded(value: number): string {
+  return value.toString().padStart(2, '0');
 }
 
 function isoDate(value: string | undefined): string {

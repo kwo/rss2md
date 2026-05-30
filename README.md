@@ -58,10 +58,10 @@ npm run dev -- https://example.com/@user --output ./out
 
 ## Output
 
-Each RSS item is written as a Markdown file named with the item date, an 8-character feed URL hash, and the item ID, for example:
+Each RSS item is written as a Markdown file named with the item publish date and time in UTC using `YYYYMMDD-HHMMSS.md`, for example:
 
 ```text
-out/2026-05-29-85ee847c-116658518702934128.md
+out/20260529-151529.md
 ```
 
 Markdown files include YAML front matter:
@@ -98,7 +98,7 @@ rss2md identifies each item by:
 2. RSS item link, if GUID is missing
 3. a SHA-256 hash of title, publish date, and body, if both GUID and link are missing
 
-State is keyed by both `feed_url` and item ID. This allows multiple feeds to share the same output directory and database without item ID collisions. Filenames also include a short hash of the feed URL to reduce cross-feed filename collisions.
+State is keyed by both `feed_url` and item ID. This allows multiple feeds to share the same database without item ID collisions.
 
 For each run, rss2md renders the Markdown first and computes a content hash from the rendered Markdown. It skips an item only when all of these are true:
 
