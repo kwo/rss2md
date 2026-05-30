@@ -73,8 +73,8 @@ date: 2026-05-29T15:15:29Z
 source: "https://example.com/post"
 guid: "https://example.com/post"
 feed: "Feed title"
-categories:
-  - "example"
+tags:
+  - example
 ---
 
 Item body converted from RSS HTML to Markdown.

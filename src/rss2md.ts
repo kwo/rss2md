@@ -259,9 +259,9 @@ function renderMarkdown(input: {
   ];
 
   if (input.categories.length > 0) {
-    lines.push('categories:');
+    lines.push('tags:');
     for (const category of input.categories) {
-      lines.push(`  - ${yamlString(category)}`);
+      lines.push(`  - ${category}`);
     }
   }
 
